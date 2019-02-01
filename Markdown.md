@@ -48,25 +48,44 @@ It's possible to pass the object directly to `std::cout`, printing out a list wi
 
 If we want to get the value contened in a node with a specific key we can just type `bst[key]`.
 
-Classes `BST<K,V>::Iterator` and `BST<K,V>::ConstIterator` allows us to explore the tree using iterators
+Classes `BST<K,V>::Iterator` and `BST<K,V>::ConstIterator` allows us to explore the tree using iterators.
+The following code shows how it works:
+~~~~
+for (BST<int, double>::Iterator it = bst.begin(); it != bst.end(); ++it)
+{
+	std::cout << *it << " --> " << bst[*it] << std::endl;
+}
+~~~~
+and it's equivalent to
+~~~~
+for (auto& x : bst) 
+{ 
+    std::cout << x << " --> " << bst[x] << std::endl; 
+}
+~~~~
+If we wish to stop the iteration before a certain key, we could use the method `Iterator find(K key)` it this way
+~~~~
+for (auto it = bst.begin(); it != bst.find(4); ++it)
+{
+	std::cout << *it << " --> " << bst[*it] << std::endl;
+}
+~~~~
 
 An important method in the class is `void RemoveNode(const K key)`, which allows us to remove from the tree the node with the indicated key.
 Every time a node is removed, if it has only one "child" its place is taken by this, while if it has two children it's replaced by the node with the smallest key in the right subtree.
 For example with this line
 ~~~~
-bst.RemoveNode(7);
+bst.RemoveNode(4);
 ~~~~
 our tree becomes
 ```
-         4 
-      /     \ 
-     2       9
-    / \     /
-   1   3   5
-             \
-              8
-             / 
-            6   
+         5 
+      /      \ 
+     2         9
+    / \       /
+   1   3     7
+           /   \
+          6      8
 ```
 Let's now illustrate the implementation of the `void Balance()` method.
 A balanced tree is a tree that has the lowest possible height.
@@ -105,7 +124,34 @@ At the end we get this
  /           \
 1             5
 ```
-Balancing a tree allows us to move along the tree using iterators in less time
+Maintaining the tree balanced is very important for ensuring speed in access to individual nodes.
+If we try to run this code
+~~~~
+for (int n = 10; n < pow(10, 5); n *= 10)
+	{
+		BST<int, double> bst;
+		for (int i = 0; i < n; ++i) { bst.AddLeaf(i, 0); }
+
+		auto t1 = std::chrono::high_resolution_clock::now();
+		for (int i = 0; i < n; ++i) { bst[i]; }
+		auto t2 = std::chrono::high_resolution_clock::now();
+
+		bst.Balance();
+
+		auto q1 = std::chrono::high_resolution_clock::now();
+		for (int i = 0; i < n; ++i) { bst[i]; }
+		auto q2 = std::chrono::high_resolution_clock::now();
+
+		std::chrono::duration<double> T = t2 - t1;
+		std::chrono::duration<double> Q = q2 - q1;
+	}
+~~~~
+we get these values for T (unbalanced) and Q (balanced)
+
+| log(N) |     1     |      2     |      3      |      4      |
+|:------:|:---------:|:----------:|:-----------:|:-----------:|
+|    T   | 1.437e-06 | 6.8272e-05 | 6.90659e-03 | 4.80687e-01 |
+|    Q   |  8.66e-07 |  7.005e-06 |  6.5145e-05 | 9.69973e-04 |
 
 
 
