@@ -186,9 +186,9 @@ public:
 	{
 		bool leap{ false };
 
-		if (!(y % 4)) { leap = true; }
+		if (y % 4 == 0) { leap = true; }
 
-		if ((y > 399 || y < -399) && !(y % 400)) { leap = false; }
+		if (y % 400 == 0) { leap = false; }
 
 		return leap;
 	}
