@@ -11,7 +11,6 @@
 #include <cstdlib>      // rand()
 
 
-
 template <typename K, typename V>
 class BST
 {
@@ -26,6 +25,7 @@ private:
 
 		Node(std::pair<const K, V> p)
 			: pair(p), sx(0), dx(0), dad(0) {}
+	
 		~Node() = default;
 
 		bool operator ==(const Node& rhs) const
@@ -57,7 +57,33 @@ private: // METHODS
 		return ReturnNodePrivate(key, root);
 	}
 
-	Node* ReturnNodePrivate(const K key, Node* Ptr);
+	Node* ReturnNodePrivate(const K key, Node* Ptr)
+	{
+		if (Ptr != nullptr)
+		{
+			if (Ptr->pair.first == key)
+			{
+				return Ptr;
+			}
+			else
+			{
+				if (key < Ptr->pair.first)
+				{
+					return ReturnNodePrivate(key, Ptr->sx);
+				}
+				else
+				{
+					return ReturnNodePrivate(key, Ptr->dx);
+				}
+			}
+		}
+		else
+		{
+			std::cout << "Node with key " << key << " not found!" << std::endl;
+			return nullptr;
+		}
+		
+	}
 
 	Node* FindSmallest(Node* Ptr)
 	{
@@ -96,9 +122,9 @@ private: // METHODS
 		return MakeVectorPrivate(keys, root);
 	}
 
-	void makeOrder(typename std::vector<K>::iterator start, typename std::vector<K>::iterator stop, std::vector<K>& ord);
+	void MakeOrder(typename std::vector<K>::iterator start, typename std::vector<K>::iterator stop, std::vector<K>& ord);
 
-	void connect(int i, int j, std::vector<K>& ord, std::vector<Node*>& nodes, int* left, int* right, bool* hasleft, bool* hasright, int* parent);
+	void Connect(int i, int j, std::vector<K>& ord, std::vector<Node*>& nodes, int* left, int* right, bool* hasleft, bool* hasright, int* parent);
 
 public:
 
@@ -125,17 +151,7 @@ public:
 		return *this;
 	}
 
-	const char* GetKeyType()
-	{
-		return typeid(K).name();
-	}
-
-	const char* GetValueType()
-	{
-		return typeid(V).name();
-	}
-
-	void AddLeaf(const K key, V val)                // void inser(K key, V val)
+	void AddLeaf(const K key, V val)            
 	{
 		AddLeafPrivate(key, val, root);
 	}
@@ -154,8 +170,7 @@ public:
 
 	void PrintRoot()
 	{
-		std::cout << "Root: " << root->pair.first << std::endl
-			;
+		std::cout << "Root: " << root->pair.first << std::endl;
 	}
 
 	void Clear()
@@ -210,9 +225,6 @@ public:
 	}
 };
 
-
-
-
 template <typename K, typename V>
 class BST<K, V>::Iterator
 	: public std::iterator<std::forward_iterator_tag, K, std::ptrdiff_t, K*, K&>
@@ -258,43 +270,38 @@ public:
 
 };
 
-
-
 template <typename K, typename V>
-typename BST<K,V>::Iterator& BST<K,V>::Iterator::operator++()
+typename BST<K, V>::Iterator& BST<K, V>::Iterator::operator++()
 {
-  if (this->itr->dx != nullptr)
-    {
-      this->itr = this->itr->dx;
-      while (this->itr->sx != nullptr)
+	if (this->itr->dx != nullptr)
 	{
-	  this->itr = this->itr->sx;
+		this->itr = this->itr->dx;
+		while (this->itr->sx != nullptr)
+		{
+			this->itr = this->itr->sx;
+		}
 	}
-    }
-  else if (this->itr->dad != nullptr)
-    {
-      if (this->itr->dad)
-	while (this->itr->dad->dx == this->itr)
-	  {
-	    this->itr = this->itr->dad;
-	    if (this->itr->dad == nullptr)
-	      {
+	else if (this->itr->dad != nullptr)
+	{
+		if (this->itr->dad)
+			while (this->itr->dad->dx == this->itr)
+			{
+				this->itr = this->itr->dad;
+				if (this->itr->dad == nullptr)
+				{
+					this->itr = nullptr;
+					return *this;
+				}
+			}
+		this->itr = this->itr->dad;
+	}
+	else
+	{
 		this->itr = nullptr;
-		return *this;
-	      }
-	  }
-      this->itr = this->itr->dad;
-    }
-  else
-    {
-      this->itr = nullptr;
-    }
+	}
 
-  return *this;
+	return *this;
 }
-
-
-
 
 template <typename K, typename V>
 class BST<K, V>::ConstIterator : public BST<K, V>::Iterator {
@@ -303,11 +310,6 @@ public:
 	using parent::Iterator;
 	const K& operator*() const { return parent::operator*(); }
 };
-
-
-
-
-
 
 template <typename K, typename V>
 void BST<K, V>::AddLeafPrivate(const K key, V val, BST<K, V>::Node* Ptr)
@@ -347,7 +349,7 @@ void BST<K, V>::AddLeafPrivate(const K key, V val, BST<K, V>::Node* Ptr)
 }
 
 template <typename K, typename V>
-void BST<K, V>::makeOrder(typename std::vector<K>::iterator start, typename std::vector<K>::iterator stop, std::vector<K>& ord)
+void BST<K, V>::MakeOrder(typename std::vector<K>::iterator start, typename std::vector<K>::iterator stop, std::vector<K>& ord)
 {
 	int n = static_cast<int>(stop - start);
 	int m;
@@ -356,8 +358,8 @@ void BST<K, V>::makeOrder(typename std::vector<K>::iterator start, typename std:
 	{
 		n % 2 ? m = (n - 1) / 2 : m = (n / 2) - caos;
 		ord.push_back(*(start + m));
-		makeOrder(start, start + m, ord);
-		makeOrder(start + m + 1, stop, ord);
+		MakeOrder(start, start + m, ord);
+		MakeOrder(start + m + 1, stop, ord);
 	}
 	else if (n == 2)
 	{
@@ -370,10 +372,6 @@ void BST<K, V>::makeOrder(typename std::vector<K>::iterator start, typename std:
 	}
 }
 
-
-
-
-
 template <typename K, typename V>
 void BST<K, V>::PrintInOrderPrivate(BST<K, V>::Node* Ptr)
 {
@@ -383,7 +381,34 @@ void BST<K, V>::PrintInOrderPrivate(BST<K, V>::Node* Ptr)
 		{
 			PrintInOrderPrivate(Ptr->sx);
 		}
-		std::cout << "Key: " << Ptr->pair.first << "\t" << "Value: " << Ptr->pair.second << std::endl;
+		//std::cout << "Key: " << Ptr->pair.first << "\t" << "Value: " << Ptr->pair.second << std::endl;
+
+		std::cout << "Node -> " << Ptr->pair.first;
+
+		if (Ptr->dad == nullptr)
+		{
+			std::cout << "\tdad -> root";
+		}
+		else
+		{
+			std::cout << "\tdad -> " << Ptr->dad->pair.first;
+		}
+		if (Ptr->sx == nullptr)
+		{
+			std::cout << "\tSX -> NULL";
+		}
+		else
+		{
+			std::cout << "\tSX -> " << Ptr->sx->pair.first;
+		}
+		if (Ptr->dx == nullptr)
+		{
+			std::cout << "\tDX -> NULL" << std::endl;
+		}
+		else
+		{
+			std::cout << "\tDX -> " << Ptr->dx->pair.first << std::endl;
+		}
 		if (Ptr->dx != nullptr)
 		{
 			PrintInOrderPrivate(Ptr->dx);
@@ -394,10 +419,6 @@ void BST<K, V>::PrintInOrderPrivate(BST<K, V>::Node* Ptr)
 		std::cout << "The tree is empty" << std::endl;
 	}
 }
-
-
-
-
 
 template <typename K, typename V>
 void BST<K, V>::RemoveNodePrivate(const K key, BST<K, V>::Node* current)
@@ -575,7 +596,7 @@ std::vector<K>& BST<K, V>::MakeVectorPrivate(std::vector<K>& keys, BST<K, V>::No
 }
 
 template <typename K, typename V>
-void BST<K, V>::connect(int i, int j, std::vector<K>& ord, std::vector<BST<K, V>::Node*>& nodes, int* left, int* right, bool* hasleft, bool* hasright, int* parent)
+void BST<K, V>::Connect(int i, int j, std::vector<K>& ord, std::vector<BST<K, V>::Node*>& nodes, int* left, int* right, bool* hasleft, bool* hasright, int* parent)
 {
 
 	if (ord[i] < ord[j]) {
@@ -588,7 +609,7 @@ void BST<K, V>::connect(int i, int j, std::vector<K>& ord, std::vector<BST<K, V>
 		}
 		else
 		{
-			connect(i, left[j], ord, nodes, left, right, hasleft, hasright, parent);
+			Connect(i, left[j], ord, nodes, left, right, hasleft, hasright, parent);
 		}
 	}
 	else
@@ -602,7 +623,7 @@ void BST<K, V>::connect(int i, int j, std::vector<K>& ord, std::vector<BST<K, V>
 		}
 		else
 		{
-			connect(i, right[j], ord, nodes, left, right, hasleft, hasright, parent);
+			Connect(i, right[j], ord, nodes, left, right, hasleft, hasright, parent);
 		}
 	}
 }
@@ -615,7 +636,7 @@ void BST<K, V>::Balance()
 	int n = static_cast<int>(keys.size());
 
 	std::vector<K> orderedkeys;
-	makeOrder(keys.begin(), keys.end(), orderedkeys);
+	MakeOrder(keys.begin(), keys.end(), orderedkeys);
 
 	std::vector<Node*> nodes;
 	for (int i = 0; i < n; ++i) { nodes.push_back(ReturnNode(orderedkeys[i])); }
@@ -632,7 +653,7 @@ void BST<K, V>::Balance()
 
 	for (int i = 1; i < n; ++i)
 	{
-		connect(i, 0, orderedkeys, nodes, left, right, hasleft, hasright, parent);
+		Connect(i, 0, orderedkeys, nodes, left, right, hasleft, hasright, parent);
 	}
 
 
@@ -657,81 +678,49 @@ void BST<K, V>::Balance()
 	delete[] parent;
 	delete[] hasleft;
 	delete[] hasright;
-	
+
 	std::cout << "----- Tree balanced -----" << std::endl;
 }
 
-
-
 template <typename K, typename V>
-  struct BST<K, V>::Node* BST<K, V>::ReturnNodePrivate(const K key, BST<K, V>::Node* Ptr){
-  if (Ptr != nullptr)
-    {
-      if (Ptr->pair.first == key)
-	{
-	  return Ptr;
-	}
-      else
-	{
-	  if (key < Ptr->pair.first)
-	    {
-	      return ReturnNodePrivate(key, Ptr->sx);
-	    }
-	  else
-	    {
-	      return ReturnNodePrivate(key, Ptr->dx);
-	    }
-	}
-    }
-  else
-    {
-      std::cout << "Node with key " << key << " not found!" << std::endl;
-      return nullptr;
-    }
-}
-
-
-
-
-template <typename K, typename V>
-  void BST<K,V>::PrintFamily(const K key)
+void BST<K, V>::PrintFamily(const K key)
 {
-  Node* Ptr = ReturnNode(key);
+	Node* Ptr = ReturnNode(key);
 
-  if (Ptr != nullptr)
-    {
-      std::cout << "Node -> " << Ptr->pair.first;
+	if (Ptr != nullptr)
+	{
+		std::cout << "Node -> " << Ptr->pair.first;
 
-      if (Ptr->dad == nullptr)
-	{
-	  std::cout << "\tdad -> root";
-	}
-      else
-	{
-	  std::cout << "\tdad -> " << Ptr->dad->pair.first;
-	}
+		if (Ptr->dad == nullptr)
+		{
+			std::cout << "\tdad -> root";
+		}
+		else
+		{
+			std::cout << "\tdad -> " << Ptr->dad->pair.first;
+		}
 
-      if (Ptr->sx == nullptr)
-	{
-	  std::cout << "\tSX -> NULL";
-	}
-      else
-	{
-	  std::cout << "\tSX -> " << Ptr->sx->pair.first;
-	}
+		if (Ptr->sx == nullptr)
+		{
+			std::cout << "\tSX -> NULL";
+		}
+		else
+		{
+			std::cout << "\tSX -> " << Ptr->sx->pair.first;
+		}
 
 
-      if (Ptr->dx == nullptr)
-	{
-	  std::cout << "\tDX -> NULL" << std::endl;
+		if (Ptr->dx == nullptr)
+		{
+			std::cout << "\tDX -> NULL" << std::endl;
+		}
+		else
+		{
+			std::cout << "\tDX -> " << Ptr->dx->pair.first << std::endl;
+		}
 	}
-      else
+	else
 	{
-	  std::cout << "\tDX -> " << Ptr->dx->pair.first << std::endl;
+		std::cout << "Key " << key << " is not in the tree." << std::endl;
 	}
-    }
-  else
-    {
-      std::cout << "Key " << key << " is not in the tree." << std::endl;
-    }
 }
